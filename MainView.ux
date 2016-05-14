@@ -1,0 +1,188 @@
+<App Theme="Basic">
+  <Panel>
+
+  <JavaScript>
+  var Observable = require("FuseJS/Observable");
+  var col = Observable(3);
+  var items = Observable();
+
+  for(var i = 0;i<10;i++){
+    var o = new Item(i);
+    items.add(setup(o,i));
+  }
+
+  function Item(id){
+    var d = (10000000 + id * 100000);
+    this.color = '#' + d.toString(16);
+    this.id = id;
+    this.moveX = Observable(0);
+    this.moveY = Observable(0);
+  }
+
+  function setup(item,n){
+     item.pos = Observable(n);
+
+     item.right = Observable(function(){
+       if((item.pos.value + 1)%col.value===0||(item.pos.value + 1)>=items.length)return false
+       else return true;
+     })
+
+     item.left = Observable(function(){
+       if((item.pos.value + 1 )%col.value===1)return false
+       else return true;
+     })
+
+     item.top = Observable(function(){
+       if((item.pos.value +1) - col.value <= 0)return false
+       else return true;
+     })
+
+     item.bottom = Observable(function(){
+       if((item.pos.value +1) + col.value > items.length)return false
+       else return true;
+     })
+     return item;
+  }
+
+  function switchPos(currentPos,targetPos,direction){
+     var targetItem = items.getAt(targetPos);
+     var currentItem = items.getAt(currentPos);
+     targetItem.pos.value = currentPos;
+     currentItem.pos.value = targetPos;
+
+     currentItem.moveX.value = currentItem.moveY.value = 0;
+     if(direction==='right'){
+        targetItem.moveX.value = 1;
+        targetItem.moveY.value = 0;
+     }
+     if(direction==='left'){
+        targetItem.moveX.value = -1;
+        targetItem.moveY.value = 0;
+     }
+     if(direction==='up'){
+        targetItem.moveY.value = -1;
+        targetItem.moveX.value = 0;
+     }
+     if(direction==='down'){
+         targetItem.moveY.value = 1;
+         targetItem.moveX.value = 0;
+     }
+
+     items.removeAt(currentPos);
+     items.insertAt(currentPos,targetItem);
+     items.removeAt(targetPos);
+     items.insertAt(targetPos,currentItem);
+
+     return currentItem;
+  }
+
+  function addItem(arg){
+    var len = items.length;
+    var newItem = new Item(len);
+    items.add(setup(newItem,len));
+    //items.insertAt(5,setup(newItem,5));
+  }
+
+  function swipeRight(arg){
+    var n = items.indexOf(arg.data);
+    var r = switchPos(n, n + 1,'right');
+  }
+
+  function swipeLeft(arg){
+    var n = items.indexOf(arg.data);
+    switchPos(n, n - 1,'left');
+  }
+
+  function swipeDown(arg){
+    var n = items.indexOf(arg.data);
+    switchPos(n, n + col.value,'down');
+  }
+
+  function swipeUp(arg){
+    var n = items.indexOf(arg.data);
+    switchPos(n, n - col.value,'up');
+  }
+
+  module.exports = {
+    items: items,
+    col : col,
+    addItem : addItem,
+    swipeRight : swipeRight,
+    swipeLeft : swipeLeft,
+    swipeUp : swipeUp,
+    swipeDown : swipeDown
+  };
+
+  </JavaScript>
+
+    <Panel Alignment="Top">
+     <ColumnLayout ColumnCount="{col}" />
+     <Each Items="{items}">
+     <Panel ux:Name="panelBox">
+          <DoubleClicked Handler="{addItem}"/>
+          <LayoutAnimation>
+            <Move RelativeTo="WorldPositionChange" X="1" Y="1" Duration="0.5" Easing="Linear" />
+          </LayoutAnimation>
+
+          <AddingAnimation>
+               <SendToBack/>
+                <Move RelativeTo="Size" X="{moveX}" Y="{moveY}" Duration="0.7" Easing="CubicIn"/>
+                <Change panelBox.Opacity="0.5" Duration="1"/>
+            </AddingAnimation>
+
+          <Viewbox>
+             <Rectangle ux:Name="box" Margin="3"  Fill="{color}" Width="200" Height="200">
+                <Circle ux:Name="circ" Width="50" Height="50" Fill="#fff" Opacity="0.5">
+                  <Text Value="{id}" Alignment="Center" FontSize="24" />
+                </Circle>
+             </Rectangle>
+          </Viewbox>
+
+          <WhileTrue Value="{left}">
+             <SwipeGesture ux:Name="swipeL" Direction="Left" Length="100" Type="Active"/>
+          </WhileTrue>
+          <WhileTrue Value="{right}">
+             <SwipeGesture ux:Name="swipeR" Direction="Right" Length="100" Type="Active"/>
+          </WhileTrue>
+          <WhileTrue Value="{top}">
+             <SwipeGesture ux:Name="swipeU" Direction="Up" Length="100" Type="Active"/>
+          </WhileTrue>
+          <WhileTrue Value="{bottom}">
+             <SwipeGesture ux:Name="swipeD" Direction="Down" Length="100" Type="Active"/>
+          </WhileTrue>
+
+         <SwipingAnimation Source="swipeR">
+            <BringToFront/>
+            <Move X="1" RelativeTo="Size" RelativeNode="panelBox" />
+          </SwipingAnimation>
+         <SwipingAnimation Source="swipeL">
+            <BringToFront/>
+            <Move X="-1" RelativeTo="Size" RelativeNode="panelBox" />
+         </SwipingAnimation>
+         <SwipingAnimation Source="swipeU">
+           <BringToFront/>
+           <Move Y="-1" RelativeTo="Size" RelativeNode="panelBox" />
+         </SwipingAnimation>
+         <SwipingAnimation Source="swipeD">
+           <BringToFront/>
+           <Move Y="1" RelativeTo="Size" RelativeNode="panelBox" />
+         </SwipingAnimation>
+
+         <Swiped Source="swipeR">
+             <Callback Handler="{swipeRight}"/>
+         </Swiped>
+         <Swiped Source="swipeL">
+             <Callback Handler="{swipeLeft}"/>
+         </Swiped>
+         <Swiped Source="swipeU">
+             <Callback Handler="{swipeUp}"/>
+         </Swiped>
+         <Swiped Source="swipeD">
+             <Callback Handler="{swipeDown}"/>
+         </Swiped>
+
+       </Panel>
+     </Each>
+    </Panel>
+  </Panel>
+</App>
