@@ -1,5 +1,5 @@
-<App Theme="Basic">
-  <Panel>
+<App>
+  <DockPanel>
 
   <JavaScript>
   var Observable = require("FuseJS/Observable");
@@ -114,7 +114,7 @@
   };
 
   </JavaScript>
-
+     <StatusBarBackground Dock="Top"/>
     <Panel Alignment="Top">
      <ColumnLayout ColumnCount="{col}" />
      <Each Items="{items}">
@@ -184,5 +184,5 @@
        </Panel>
      </Each>
     </Panel>
-  </Panel>
+  </DockPanel>
 </App>
